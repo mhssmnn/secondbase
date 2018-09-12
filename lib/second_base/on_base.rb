@@ -13,8 +13,9 @@ module SecondBase
     original_configurations = Rails.application.config.database_configuration
     original_migrations_path = ActiveRecord::Tasks::DatabaseTasks.migrations_paths
     original_db_dir = ActiveRecord::Tasks::DatabaseTasks.db_dir
+    original_database_url, ENV['DATABASE_URL'] = ENV['DATABASE_URL'], ENV['SECONDBASE_URL']
     ActiveRecord::Tasks::DatabaseTasks.current_config = config
-    ActiveRecord::Base.configurations = original_configurations[Railtie.config_key]
+    ActiveRecord::Base.configurations = original_configurations[Railtie.config_key] || {}
     ActiveRecord::Base.establish_connection(config)
     ActiveRecord::Tasks::DatabaseTasks.migrations_paths = [SecondBase::Railtie.fullpath('migrate')]
     ActiveRecord::Tasks::DatabaseTasks.db_dir = SecondBase::Railtie.fullpath
@@ -23,6 +24,7 @@ module SecondBase
     yield
   ensure
     unless already_on_base
+      ENV['DATABASE_URL'] = original_database_url
       ActiveRecord::Base.configurations = original_configurations
       ActiveRecord::Tasks::DatabaseTasks.migrations_paths = original_migrations_path
       ActiveRecord::Tasks::DatabaseTasks.db_dir = original_db_dir
